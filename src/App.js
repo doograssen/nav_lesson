@@ -1,27 +1,63 @@
 // import logo from './logo.svg';
+import { useEffect, useState } from 'react';
 import './App.css';
-import { Routes, Route, Link, NavLink,  Outlet, useParams } from 'react-router-dom';
+import { Routes, Route, Link, NavLink,  Outlet, useParams, useMatch, useNavigate } from 'react-router-dom';
 
-const fetchProductList = () => [
-	{ id:1, name:'Телевизор'},
+
+const LOAD_TIME = 5000;
+
+const database = {
+	productList: [{ id:1, name:'Телевизор'},
 	{ id:2, name:'Смартфон'},
-	{ id:3, name:'Планшет'},
-];
+	{ id:3, name:'Планшет'},],
+	products: {
+		1: { id:1, name: 'Телевизор', price: 29000, amount: 12 },
+		2: { id:2, name: 'Смартфон', price: 19000, amount: 10 },
+		3: { id:3, name: 'Планшет', price: 49000, amount: 2 }
+	},
+}
 
-const fetchProduct = (id) => ({
-	1: { id:1, name: 'Телевизор', price: 29000, amount: 12 },
-	2: { id:2, name: 'Смартфон', price: 19000, amount: 10 },
-	3: { id:3, name: 'Планшет', price: 49000, amount: 2 },
-}[id]);
+const fetchProductList = () => database.productList;
+
+const fetchProduct = (id) => new Promise((resolve) => {
+	setTimeout(()=> {
+		resolve(database.products[id]);
+	}, 2500);
+});
 
 
 const ProductNotFound = () => <div>
 	<h3>Такая страница товара не существует</h3>
 </div>;
 
+const ProductLoadError = () => <div>
+	<h3>Ошибка загрузки товара</h3>
+</div>;
+
 const Product = () => {
+	const [product, setProduct] = useState(null);
 	const params = useParams();
-	const product = fetchProduct(params.id);
+	const navigate = useNavigate();
+	// const urlMatchData = useMatch('/catalog/:type/:id');
+	// console.log(urlMatchData);
+
+	useEffect(() => {
+		let isLoading = false;
+		let isProductLoaded = false;
+		setTimeout(() => {
+			isLoading = true;
+			if (!isProductLoaded) {
+				navigate('/product-load-error');
+			}
+		},
+		LOAD_TIME);
+		fetchProduct(params.id).then((loadedProduct) => {
+			isProductLoaded = true;
+			if (!isLoading) {
+				setProduct(loadedProduct);
+			}
+		});
+	}, [navigate, params.id]);
 	if (!product) {
 		return <ProductNotFound/>;
 	}
@@ -99,8 +135,10 @@ export const App = () => {
 					<Route path="/" element={<MainPage />} />
 					<Route path="/catalog" element={<Catalog />}>
 						<Route path="product/:id" element={<Product/>}/>
+						<Route path="service/:id" element={<Product/>}/>
 					</Route>
 					<Route path="/contacts" element={<Contacts />} />
+					<Route path="/product-load-error" element={<ProductLoadError />} />
 					<Route path="*" element={<NotFound />} />
 				</Routes>
 			</main>
