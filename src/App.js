@@ -1,7 +1,7 @@
 // import logo from './logo.svg';
 import { useEffect, useState } from 'react';
 import './App.css';
-import { Routes, Route, Link, NavLink,  Outlet, useParams, useMatch, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, NavLink,  Outlet, useParams, useMatch, useNavigate, Navigate, useRoutes } from 'react-router-dom';
 
 
 const LOAD_TIME = 5000;
@@ -47,20 +47,26 @@ const Product = () => {
 		setTimeout(() => {
 			isLoading = true;
 			if (!isProductLoaded) {
-				navigate('/product-load-error');
+				navigate('/product-load-error', { replace: true });
 			}
 		},
 		LOAD_TIME);
 		fetchProduct(params.id).then((loadedProduct) => {
 			isProductLoaded = true;
 			if (!isLoading) {
+				if (!loadedProduct) {
+					navigate('/product-not-exist');
+					return;
+				}
 				setProduct(loadedProduct);
 			}
 		});
 	}, [navigate, params.id]);
+
 	if (!product) {
-		return <ProductNotFound/>;
+		return null;//<ProductNotFound/>;
 	}
+
 	const { name, price, amount } = product;
 	return (
 		<div>
@@ -117,6 +123,18 @@ const ExtendedLink = ({to, children}) => (
 );
 
 export const App = () => {
+	const routes = useRoutes([
+		{ path: '/', element: <MainPage/> },
+		{ path: '/catalog', element: <Catalog/>, children: [
+			{ path: 'product/:id', element: <Product/> },
+			{ path: 'service/:id', element: <Product/> },
+		]},
+		{ path: "/contacts", element: <Contacts /> },
+		{ path: "/product-load-error", element: <ProductLoadError /> },
+		{ path: "/product-not-exist", element: <ProductNotFound /> },
+		{ path: "/404", element: <NotFound /> },
+		{ path: "*", element: <Navigate to="/404"/> },
+	]);
 	return (
 		<div className="app">
 			<main className="app-main">
@@ -131,7 +149,7 @@ export const App = () => {
 						<li><ExtendedLink to="/contacts">Контакты</ExtendedLink></li>
 					</ul>
 				</div>
-				<Routes>
+				{/* <Routes>
 					<Route path="/" element={<MainPage />} />
 					<Route path="/catalog" element={<Catalog />}>
 						<Route path="product/:id" element={<Product/>}/>
@@ -139,8 +157,11 @@ export const App = () => {
 					</Route>
 					<Route path="/contacts" element={<Contacts />} />
 					<Route path="/product-load-error" element={<ProductLoadError />} />
-					<Route path="*" element={<NotFound />} />
-				</Routes>
+					<Route path="/product-not-exist" element={<ProductNotFound />} />
+					<Route path="/404" element={<NotFound />} />
+					<Route path="*" element={<Navigate to="/404"/>} />
+				</Routes> */}
+				{routes}
 			</main>
 		</div>
 	);
